@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Paraphraser</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Paraphrase Your Text</h1>
+        <form id="paraphrase-form">
+            <label for="input-text">Enter Text:</label>
+            <textarea id="input-text" rows="6" placeholder="Type your text here..."></textarea>
+            <button type="submit" id="submit-btn">Get Paraphrase</button>
+        </form>
+
+        <h3>Paraphrased Text:</h3>
+        <div id="result" class="result-box"></div> <!-- Displaying the paraphrased text -->
+        <div id="loading" class="loading" style="display: none;">Generating paraphrase...</div>
+    </div>
+
+    <script>
+        document.getElementById('paraphrase-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const inputText = document.getElementById('input-text').value;
+            const loading = document.getElementById('loading');
+            const resultElement = document.getElementById('result');
+            const submitBtn = document.getElementById('submit-btn');
+            
+            // Show loading indicator
+            loading.style.display = 'block';
+            resultElement.textContent = ''; // Clear previous result
+            submitBtn.disabled = true; // Disable button during process
+            
+            fetch('/paraphrase', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text: inputText }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Hide loading and enable button
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+                
+                if (data.paraphrased_texts && data.paraphrased_texts.length > 0) {
+                    resultElement.textContent = data.paraphrased_texts[0];  // Display the first paraphrase
+                } else if (data.error) {
+                    resultElement.textContent = data.error;  // Display error message
+                } else {
+                    resultElement.textContent = "No paraphrases generated.";
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+                resultElement.textContent = "An error occurred. Please try again.";
+            });
+        });
+    </script>
+</body>
+</html>
+
+<style>
+    body {
+        font-family: 'Arial', sans-serif;
+        background-color: #f9f9f9;
+        margin: 0;
+        padding: 0;
+    }
+
+    .container {
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 30px;
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        font-size: 16px;
+    }
+
+    h1 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 20px;
+    }
+
+    textarea {
+        width: 100%;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+        resize: vertical; /* Allow vertical resizing */
+    }
+
+    button {
+        width: 100%;
+        padding: 15px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    button:hover {
+        background-color: #0056b3;
+    }
+
+    button:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+    }
+
+    h3 {
+        color: #333;
+        margin-top: 30px;
+        font-size: 18px;
+    }
+
+    #result {
+        color: #555;
+        padding: 20px;
+        background-color: #f0f0f0;
+        border-radius: 5px;
+        word-wrap: break-word;
+        min-height: 40px;
+        margin-top: 15px;
+    }
+
+    .loading {
+        color: #007bff;
+        font-size: 16px;
+        font-weight: bold;
+        margin-top: 15px;
+    }
+</style>
